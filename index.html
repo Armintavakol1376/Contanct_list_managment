@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Contact Management System</h1>
+
+        <!-- Form to Add Contact -->
+        <div class="form">
+            <input type="text" id="name" placeholder="Enter Name">
+            <input type="number" id="age" placeholder="Enter Age">
+            <input type="email" id="email" placeholder="Enter Email">
+            <button onclick="addContact()">Add Contact</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search">
+            <input type="text" id="search" placeholder="Search by Name" onkeyup="searchContact()">
+        </div>
+
+        <!-- Contact List -->
+        <div id="contact-list">
+            <h2>Contact List</h2>
+            <ul id="contacts"></ul>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
