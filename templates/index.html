@@ -3,19 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Management System</title>
+    <title>Contact Management</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-
-
-
-
 </head>
-<body>
+<body onload="checkAuth()">  <!-- Check if user is logged in -->
 
     <div class="container">
         <h1>Contact Management System</h1>
+        <button onclick="logout()">Logout</button>
 
-        <!-- Form to Add Contact -->
+        <!-- Contact Form -->
         <div class="form">
             <input type="text" id="name" placeholder="Enter Name">
             <input type="number" id="age" placeholder="Enter Age">

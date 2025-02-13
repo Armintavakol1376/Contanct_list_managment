@@ -1,72 +1,71 @@
-document.addEventListener("DOMContentLoaded", loadContacts);
-
-function loadContacts() {
-    fetch("/get_contacts")
-        .then(response => response.json())
-        .then(data => displayContacts(data.contacts))
-        .catch(error => console.error("Error loading contacts:", error));
+// Store JWT Token
+function saveToken(token) {
+    localStorage.setItem("jwt", token);
 }
 
-function addContact() {
-    let name = document.getElementById("name").value;
-    let age = document.getElementById("age").value;
-    let email = document.getElementById("email").value;
+// Retrieve JWT Token
+function getToken() {
+    return localStorage.getItem("jwt");
+}
 
-    if (!name || !age || !email) {
-        alert("Please fill all fields!");
+// Redirect If Not Logged In
+function checkAuth() {
+    if (!getToken()) {
+        window.location.href = "/login"; // Redirect to login if not authenticated
+    }
+}
+
+// Logout Function
+function logout() {
+    localStorage.removeItem("jwt");
+    alert("Logged out successfully!");
+    window.location.href = "/login"; // Redirect back to login page
+}
+
+function login() {
+    let email = document.getElementById("login-email").value.trim();
+    let password = document.getElementById("login-password").value.trim();
+
+    //  Prevent empty fields
+    if (!email || !password) {
+        alert("Email and password are required!");
         return;
     }
 
-    fetch("/add_contact", {
+    fetch("/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, age, email })
+        body: JSON.stringify({ email, password })
     })
     .then(response => response.json())
     .then(data => {
-        if (data.error) {
-            alert(data.error);
+        if (data.token) {
+            saveToken(data.token);
+            alert("Login successful!");
+            window.location.href = "/";
         } else {
-            loadContacts();  // Reload the updated contact list
+            alert(data.error);  // Show backend error message
         }
     });
 }
 
-function displayContacts(contacts) {
-    let contactList = document.getElementById("contacts");
-    contactList.innerHTML = "";
+// User Registration
+function register() {
+    let email = document.getElementById("login-email").value;
+    let password = document.getElementById("login-password").value;
 
-    contacts.forEach((person, index) => {
-        let li = document.createElement("li");
-        li.innerHTML = `
-            ${person.name} | ${person.age} | ${person.email}
-            <button onclick="deleteContact(${index})">Delete</button>
-        `;
-        contactList.appendChild(li);
-    });
+    fetch("/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    })
+    .then(response => response.json())
+    .then(data => alert(data.message));
 }
 
-function deleteContact(index) {
-    fetch(`/delete_contact/${index}`, { method: "DELETE" })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
-            } else {
-                loadContacts();  // Reload the updated list
-            }
-        });
-}
 
-function searchContact() {
-    let searchValue = document.getElementById("search").value.trim();
-    
-    if (searchValue === "") {
-        loadContacts();
-        return;
-    }
 
-    fetch(`/search_contacts/${searchValue}`)
-        .then(response => response.json())
-        .then(data => displayContacts(data.contacts));
-}
+
+
+
+
