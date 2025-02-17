@@ -63,6 +63,42 @@ function register() {
     .then(data => alert(data.message));
 }
 
+// Get JWT token
+function addContact() {
+    let name = document.getElementById("name").value.trim();
+    let age = document.getElementById("age").value.trim();
+    let email = document.getElementById("email").value.trim();
+    let token = getToken();  
+
+    // Prevent empty inputs
+    if (!name || !age || !email) {
+        alert("All fields are required!");
+        return;
+    }
+
+    fetch("/add_contact", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // Send token
+        },
+        body: JSON.stringify({ name, age, email })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("Contact added successfully!");
+            location.reload(); // Reload to update contact list
+        } else {
+            alert(data.error || "Failed to add contact.");
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("An error occurred while adding the contact.");
+    });
+}
+
 
 
 

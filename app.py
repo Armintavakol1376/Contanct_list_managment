@@ -82,3 +82,26 @@ def login():
 if __name__ == "__main__":
     app.run(debug=True)
 
+# 🔹 Add a New Contact
+@app.route("/add_contact", methods=["POST"])
+@jwt_required()
+def add_contact():
+    current_user = get_jwt_identity()  # Get logged-in user
+    data = request.json
+
+    name = data.get("name")
+    age = data.get("age")
+    email = data.get("email")
+
+    if not name or not age or not email:
+        return jsonify({"error": "All fields are required"}), 400
+
+    contacts = load_contacts()
+    contacts.append({"name": name, "age": age, "email": email, "added_by": current_user})
+    save_contacts(contacts)
+
+    return jsonify({"success": True, "contact": contacts[-1]}), 201
+
+@app.before_request
+def log_request():
+    print(f"Incoming request: {request.method} {request.path}")
