@@ -1,131 +1,107 @@
-from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from werkzeug.security import generate_password_hash, check_password_hash
-from functools import wraps
+import json
+import os
 
 app = Flask(__name__)
-
-# 🔹 MySQL Database Configuration (Keep this only once)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://flask_user:your_password@localhost/flask_db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = 'supersecretkey'
-
-db = SQLAlchemy(app)
+app.config["JWT_SECRET_KEY"] = "supersecretkey"
 jwt = JWTManager(app)
 
-# 🔹 Define User Model
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(20), nullable=False)  # 'admin', 'superuser', 'user'
+USERS_FILE = "users.json"
+CONTACTS_FILE = "contacts.json"
 
-# 🔹 Define Contact Model
-class Contact(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    age = db.Column(db.Integer, nullable=False)
-    email = db.Column(db.String(100), nullable=False)
-    added_by = db.Column(db.String(100), db.ForeignKey('user.email'), nullable=False)
+# Load & Save Users
+def load_users():
+    if not os.path.exists(USERS_FILE):
+        save_users({})
+    try:
+        with open(USERS_FILE, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
 
-# 🔹 Create Database Tables
-with app.app_context():
-    db.create_all()
+def save_users(users):
+    with open(USERS_FILE, "w") as f:
+        json.dump(users, f, indent=4)
 
-# 🔹 Middleware for Role-Based Access Control
-def role_required(required_role):
-    def decorator(func):
-        @wraps(func)
-        @jwt_required()
-        def wrapper(*args, **kwargs):
-            current_user = get_jwt_identity()
-            user = User.query.filter_by(email=current_user).first()
-            if not user or user.role != required_role:
-                return jsonify({"error": "Unauthorized access"}), 403
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
+# Load & Save Contacts
+def load_contacts():
+    if not os.path.exists(CONTACTS_FILE):
+        save_contacts([])
+    try:
+        with open(CONTACTS_FILE, "r") as f:
+            data = json.load(f)
+            return data.get("contacts", [])
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+def save_contacts(contacts):
+    with open(CONTACTS_FILE, "w") as f:
+        json.dump({"contacts": contacts}, f, indent=4)
+
+# 🔹 Route for Login Page
+@app.route("/login")
+def login_page():
+    return render_template("login.html")
+
+# 🔹 Route for Contact Management Page (Protected)
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 # 🔹 User Registration
 @app.route("/register", methods=["POST"])
 def register():
     data = request.json
-    existing_user = User.query.filter_by(email=data["email"]).first()
+    users = load_users()
 
-    if existing_user:
+    if data["email"] in users:
         return jsonify({"error": "User already exists"}), 400
 
-    hashed_password = generate_password_hash(data["password"], method="pbkdf2:sha256")
-    new_user = User(email=data["email"], password=hashed_password, role=data["role"])
-    
-    db.session.add(new_user)
-    db.session.commit()
+    users[data["email"]] = {"password": data["password"]}
+    save_users(users)
 
-    return jsonify({"message": "User registered successfully!"}), 201
+    return jsonify({"message": "User registered successfully"}), 201
 
-# 🔹 User Login with JWT
+# 🔹 User Login
 @app.route("/login", methods=["POST"])
 def login():
     data = request.json
-    user = User.query.filter_by(email=data["email"]).first()
+    users = load_users()
 
-    if user and check_password_hash(user.password, data["password"]):
-        access_token = create_access_token(identity=user.email)
-        return jsonify({"token": access_token}), 200
+    #  Prevent blank email or password login
+    if not data.get("email") or not data.get("password"):
+        return jsonify({"error": "Email and password are required"}), 400
+
+    if data["email"] in users and users[data["email"]]["password"] == data["password"]:
+        access_token = create_access_token(identity=data["email"])
+        return jsonify({"token": access_token})
 
     return jsonify({"error": "Invalid credentials"}), 401
 
-# 🔹 Add a Contact (Only Authenticated Users)
+if __name__ == "__main__":
+    app.run(debug=True)
+
+# 🔹 Add a New Contact
 @app.route("/add_contact", methods=["POST"])
 @jwt_required()
 def add_contact():
-    current_user_email = get_jwt_identity()
+    current_user = get_jwt_identity()  # Get logged-in user
     data = request.json
 
-    if not data.get("name") or not data.get("age") or not data.get("email"):
+    name = data.get("name")
+    age = data.get("age")
+    email = data.get("email")
+
+    if not name or not age or not email:
         return jsonify({"error": "All fields are required"}), 400
 
-    new_contact = Contact(
-        name=data["name"], age=data["age"], email=data["email"], added_by=current_user_email
-    )
-    
-    db.session.add(new_contact)
-    db.session.commit()
+    contacts = load_contacts()
+    contacts.append({"name": name, "age": age, "email": email, "added_by": current_user})
+    save_contacts(contacts)
 
-    return jsonify({"message": "Contact added successfully!"}), 201
+    return jsonify({"success": True, "contact": contacts[-1]}), 201
 
-# 🔹 Admin-Only Endpoint
-@app.route("/admin_dashboard", methods=["GET"])
-@role_required("admin")
-def admin_dashboard():
-    return jsonify({"message": "Welcome, Admin!"})
-
-# 🔹 Superuser-Only Endpoint
-@app.route("/superuser_dashboard", methods=["GET"])
-@role_required("superuser")
-def superuser_dashboard():
-    return jsonify({"message": "Welcome, Superuser!"})
-
-# 🔹 Normal User-Only Endpoint
-@app.route("/user_dashboard", methods=["GET"])
-@role_required("user")
-def user_dashboard():
-    return jsonify({"message": "Welcome, User!"})
-
-# 🔹 Home Route (Moved up)
-@app.route("/")
-def home():
-    return jsonify({"message": "Welcome to the Flask App!"})
-
-# 🔹 Test Connection to MySQL
-with app.app_context():
-    try:
-        db.session.execute('SELECT 1')
-        print("✅ Successfully connected to MySQL!")
-    except Exception as e:
-        print(f"❌ Connection failed: {e}")
-
-# 🔹 Run Flask App (Only once)
-if __name__ == "__main__":
-    app.run(debug=True)
+@app.before_request
+def log_request():
+    print(f"Incoming request: {request.method} {request.path}")
