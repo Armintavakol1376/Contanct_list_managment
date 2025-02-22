@@ -1,43 +1,31 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-import json
-import os
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 app = Flask(__name__)
+
+# 🔹 Configurations
 app.config["JWT_SECRET_KEY"] = "supersecretkey"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://armin:armin1376@localhost/flask_db'  # MySQL URI
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 jwt = JWTManager(app)
 
-USERS_FILE = "users.json"
-CONTACTS_FILE = "contacts.json"
+# 🔹 Define User & Contact Models
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
 
-# Load & Save Users
-def load_users():
-    if not os.path.exists(USERS_FILE):
-        save_users({})
-    try:
-        with open(USERS_FILE, "r") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
-
-def save_users(users):
-    with open(USERS_FILE, "w") as f:
-        json.dump(users, f, indent=4)
-
-# Load & Save Contacts
-def load_contacts():
-    if not os.path.exists(CONTACTS_FILE):
-        save_contacts([])
-    try:
-        with open(CONTACTS_FILE, "r") as f:
-            data = json.load(f)
-            return data.get("contacts", [])
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
-
-def save_contacts(contacts):
-    with open(CONTACTS_FILE, "w") as f:
-        json.dump({"contacts": contacts}, f, indent=4)
+class Contact(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    age = db.Column(db.Integer, nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    added_by = db.Column(db.String(100), db.ForeignKey('user.email'), nullable=False)
 
 # 🔹 Route for Login Page
 @app.route("/login")
@@ -49,44 +37,50 @@ def login_page():
 def home():
     return render_template("index.html")
 
-# 🔹 User Registration
+# ✅ **Register User & Store in MySQL**
 @app.route("/register", methods=["POST"])
 def register():
     data = request.json
-    users = load_users()
+    email = data.get("email")
+    password = data.get("password")
 
-    if data["email"] in users:
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    existing_user = User.query.filter_by(email=email).first()
+
+    if existing_user:
         return jsonify({"error": "User already exists"}), 400
 
-    users[data["email"]] = {"password": data["password"]}
-    save_users(users)
+    new_user = User(email=email, password=password)
+    db.session.add(new_user)
+    db.session.commit()
 
     return jsonify({"message": "User registered successfully"}), 201
 
-# 🔹 User Login
+# ✅ **User Login (Authenticate & Generate Token)**
 @app.route("/login", methods=["POST"])
 def login():
     data = request.json
-    users = load_users()
+    email = data.get("email")
+    password = data.get("password")
 
-    #  Prevent blank email or password login
-    if not data.get("email") or not data.get("password"):
+    if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
 
-    if data["email"] in users and users[data["email"]]["password"] == data["password"]:
-        access_token = create_access_token(identity=data["email"])
+    user = User.query.filter_by(email=email, password=password).first()
+
+    if user:
+        access_token = create_access_token(identity=email)
         return jsonify({"token": access_token})
 
     return jsonify({"error": "Invalid credentials"}), 401
 
-if __name__ == "__main__":
-    app.run(debug=True)
-
-# 🔹 Add a New Contact
+# ✅ **Add Contact & Store in MySQL**
 @app.route("/add_contact", methods=["POST"])
 @jwt_required()
 def add_contact():
-    current_user = get_jwt_identity()  # Get logged-in user
+    current_user = get_jwt_identity()
     data = request.json
 
     name = data.get("name")
@@ -96,12 +90,16 @@ def add_contact():
     if not name or not age or not email:
         return jsonify({"error": "All fields are required"}), 400
 
-    contacts = load_contacts()
-    contacts.append({"name": name, "age": age, "email": email, "added_by": current_user})
-    save_contacts(contacts)
+    new_contact = Contact(name=name, age=age, email=email, added_by=current_user)
+    db.session.add(new_contact)
+    db.session.commit()
 
-    return jsonify({"success": True, "contact": contacts[-1]}), 201
+    return jsonify({"success": True, "message": "Contact added successfully"}), 201
 
+# ✅ **Log Incoming Requests**
 @app.before_request
 def log_request():
     print(f"Incoming request: {request.method} {request.path}")
+
+if __name__ == "__main__":
+    app.run(debug=True)
