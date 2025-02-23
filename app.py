@@ -117,6 +117,35 @@ def get_contacts():
     
     return jsonify({"contacts": result}), 200
 
+# Add a DELETE endpoint to remove a contact
+@app.route("/delete_contact/<int:id>", methods=["DELETE"])
+@jwt_required()
+def delete_contact(id):
+    contact = Contact.query.get(id)
+    if not contact:
+        return jsonify({"error": "Contact not found"}), 404
+
+    db.session.delete(contact)
+    db.session.commit()
+    return jsonify({"message": "Contact deleted successfully"}), 200
+
+
+#Add a PUT endpoint to edit a contact
+@app.route("/edit_contact/<int:id>", methods=["PUT"])
+@jwt_required()
+def edit_contact(id):
+    contact = Contact.query.get(id)
+    if not contact:
+        return jsonify({"error": "Contact not found"}), 404
+
+    data = request.json
+    # Update fields if new data is provided; otherwise, keep existing values.
+    contact.name = data.get("name", contact.name)
+    contact.age = data.get("age", contact.age)
+    contact.email = data.get("email", contact.email)
+    
+    db.session.commit()
+    return jsonify({"message": "Contact updated successfully"}), 200
 
 # ✅ **Log Incoming Requests**
 @app.before_request

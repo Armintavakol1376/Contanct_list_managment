@@ -139,6 +139,95 @@ function displayContacts(contacts) {
     });
 }
 
+// Update displayContacts() to show Edit and Delete buttons
+function displayContacts(contacts) {
+    let contactsList = document.getElementById("contacts");
+    contactsList.innerHTML = ""; // Clear current list
+
+    contacts.forEach(contact => {
+        let li = document.createElement("li");
+        li.textContent = `${contact.name} (Age: ${contact.age}) - ${contact.email}`;
+        
+        // Create Edit Button
+        let editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.style.marginLeft = "10px";
+        editBtn.onclick = function() {
+            editContact(contact.id);
+        };
+
+        // Create Delete Button
+        let deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Delete";
+        deleteBtn.style.marginLeft = "5px";
+        deleteBtn.onclick = function() {
+            deleteContact(contact.id);
+        };
+
+        li.appendChild(editBtn);
+        li.appendChild(deleteBtn);
+        contactsList.appendChild(li);
+    });
+}
+
+//Add the following function to call your DELETE endpoint
+function deleteContact(contactId) {
+    let token = getToken();
+    if (!token) {
+        alert("You are not logged in");
+        return;
+    }
+
+    fetch(`/delete_contact/${contactId}`, {
+        method: "DELETE",
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message || data.error);
+        loadContacts();  // Refresh contact list after deletion
+    })
+    .catch(error => {
+        console.error("Error deleting contact:", error);
+        alert("An error occurred while deleting the contact.");
+    });
+}
+
+//You can use a simple prompt() for basic editing
+function editContact(contactId) {
+    let token = getToken();
+    if (!token) {
+        alert("You are not logged in");
+        return;
+    }
+
+    // Prompt the user for new values
+    let newName = prompt("Enter new name:");
+    let newAge = prompt("Enter new age:");
+    let newEmail = prompt("Enter new email:");
+
+    // Basic validation can be added here if desired
+    fetch(`/edit_contact/${contactId}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ name: newName, age: newAge, email: newEmail })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message || data.error);
+        loadContacts();  // Refresh the contact list after editing
+    })
+    .catch(error => {
+        console.error("Error editing contact:", error);
+        alert("An error occurred while editing the contact.");
+    });
+}
+
 
 
 
