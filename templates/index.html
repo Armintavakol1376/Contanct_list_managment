@@ -32,6 +32,77 @@
         </div>
     </div>
 
+    <!-- Edit Contact Modal -->
+    <div id="editModal" style="display:none; position:fixed; top:20%; left:50%; transform:translate(-50%, -20%); padding:20px; background:white; border:1px solid black;">
+        <h3>Edit Contact</h3>
+        <input type="hidden" id="edit-contact-id">
+        <input type="text" id="edit-name" placeholder="Name"><br>
+        <input type="number" id="edit-age" placeholder="Age"><br>
+        <input type="email" id="edit-email" placeholder="Email"><br>
+        <button onclick="editContact()">Save</button>
+        <button onclick="closeEditModal()">Cancel</button>
+    </div>
+
+    <script>
+        function renderContacts(contacts) {
+            let contactList = document.getElementById("contacts");
+            contactList.innerHTML = "";
+
+            contacts.forEach(contact => {
+                let listItem = document.createElement("li");
+                listItem.innerHTML = `
+                    <span id="name-${contact.id}">${contact.name}</span>
+                    <span id="age-${contact.id}">(Age: ${contact.age})</span>
+                    <span id="email-${contact.id}">${contact.email}</span>
+                    
+                    <button onclick="openEditModal(${contact.id}, '${contact.name}', ${contact.age}, '${contact.email}')">Edit</button>
+                    <button onclick="deleteContact(${contact.id})">Delete</button>
+                `;
+                contactList.appendChild(listItem);
+            });
+        }
+
+        function openEditModal(id, name, age, email) {
+            document.getElementById("edit-contact-id").value = id;
+            document.getElementById("edit-name").value = name;
+            document.getElementById("edit-age").value = age;
+            document.getElementById("edit-email").value = email;
+            document.getElementById("editModal").style.display = "block";
+        }
+
+        function closeEditModal() {
+            document.getElementById("editModal").style.display = "none";
+        }
+
+        function editContact() {
+            let contactId = document.getElementById("edit-contact-id").value;
+            let newName = document.getElementById("edit-name").value;
+            let newAge = document.getElementById("edit-age").value;
+            let newEmail = document.getElementById("edit-email").value;
+
+            fetch(`/edit_contact/${contactId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: newName, age: newAge, email: newEmail })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    loadContacts();  // Refresh the contact list
+                    closeEditModal();  // Close the modal
+                }
+            })
+            .catch(error => console.error("Error updating contact:", error));
+        }
+
+        function loadContacts() {
+            fetch("/get_contacts", { method: "GET", headers: { "Authorization": "Bearer your_token_here" } })
+                .then(response => response.json())
+                .then(data => renderContacts(data.contacts))
+                .catch(error => console.error("Error fetching contacts:", error));
+        }
+    </script>
+
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

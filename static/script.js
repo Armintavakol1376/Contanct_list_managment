@@ -132,19 +132,6 @@ function displayContacts(contacts) {
     contactsList.innerHTML = ""; // Clear current list
 
     contacts.forEach(contact => {
-        // Create a new list item for each contact
-        let li = document.createElement("li");
-        li.textContent = `${contact.name} (Age: ${contact.age}) - ${contact.email}`;
-        contactsList.appendChild(li);
-    });
-}
-
-// Update displayContacts() to show Edit and Delete buttons
-function displayContacts(contacts) {
-    let contactsList = document.getElementById("contacts");
-    contactsList.innerHTML = ""; // Clear current list
-
-    contacts.forEach(contact => {
         let li = document.createElement("li");
         li.textContent = `${contact.name} (Age: ${contact.age}) - ${contact.email}`;
         
@@ -153,7 +140,7 @@ function displayContacts(contacts) {
         editBtn.textContent = "Edit";
         editBtn.style.marginLeft = "10px";
         editBtn.onclick = function() {
-            editContact(contact.id);
+            openEditModal(contact);
         };
 
         // Create Delete Button
@@ -170,7 +157,7 @@ function displayContacts(contacts) {
     });
 }
 
-//Add the following function to call your DELETE endpoint
+// DELETE Contact
 function deleteContact(contactId) {
     let token = getToken();
     if (!token) {
@@ -195,20 +182,40 @@ function deleteContact(contactId) {
     });
 }
 
-//You can use a simple prompt() for basic editing
-function editContact(contactId) {
+// Open Edit Modal
+function openEditModal(contact) {
+    document.getElementById("edit-contact-id").value = contact.id;
+    document.getElementById("edit-name").value = contact.name;
+    document.getElementById("edit-age").value = contact.age;
+    document.getElementById("edit-email").value = contact.email;
+    
+    document.getElementById("editModal").style.display = "block";
+}
+
+// Close Modal
+function closeEditModal() {
+    document.getElementById("editModal").style.display = "none";
+}
+
+// Update Contact
+function editContact() {
     let token = getToken();
     if (!token) {
         alert("You are not logged in");
         return;
     }
 
-    // Prompt the user for new values
-    let newName = prompt("Enter new name:");
-    let newAge = prompt("Enter new age:");
-    let newEmail = prompt("Enter new email:");
+    let contactId = document.getElementById("edit-contact-id").value;
+    let newName = document.getElementById("edit-name").value.trim();
+    let newAge = document.getElementById("edit-age").value.trim();
+    let newEmail = document.getElementById("edit-email").value.trim();
 
-    // Basic validation can be added here if desired
+    // Basic validation
+    if (!newName || !newAge || !newEmail) {
+        alert("All fields are required!");
+        return;
+    }
+
     fetch(`/edit_contact/${contactId}`, {
         method: "PUT",
         headers: {
@@ -220,6 +227,7 @@ function editContact(contactId) {
     .then(response => response.json())
     .then(data => {
         alert(data.message || data.error);
+        closeEditModal();
         loadContacts();  // Refresh the contact list after editing
     })
     .catch(error => {
@@ -227,9 +235,3 @@ function editContact(contactId) {
         alert("An error occurred while editing the contact.");
     });
 }
-
-
-
-
-
-
