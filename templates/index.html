@@ -6,7 +6,7 @@
     <title>Contact Management</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body onload="checkAuth()">  <!-- Check if user is logged in -->
+<body onload="checkAuth(); loadContacts();">  <!-- Check if user is logged in and load contacts -->
 
     <div class="container">
         <h1>Contact Management System</h1>

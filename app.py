@@ -96,6 +96,28 @@ def add_contact():
 
     return jsonify({"success": True, "message": "Contact added successfully"}), 201
 
+
+@app.route("/get_contacts", methods=["GET"])
+@jwt_required()
+def get_contacts():
+    current_user = get_jwt_identity()  # Retrieve the email of the logged-in user
+    # Get contacts added by the current user (or modify as needed)
+    contacts = Contact.query.filter_by(added_by=current_user).all()
+    
+    # Convert each contact object into a dictionary
+    result = []
+    for c in contacts:
+        result.append({
+            "id": c.id,
+            "name": c.name,
+            "age": c.age,
+            "email": c.email,
+            "added_by": c.added_by
+        })
+    
+    return jsonify({"contacts": result}), 200
+
+
 # ✅ **Log Incoming Requests**
 @app.before_request
 def log_request():
@@ -103,3 +125,6 @@ def log_request():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+
+

@@ -99,6 +99,45 @@ function addContact() {
     });
 }
 
+// Load Contacts from the Server
+function loadContacts() {
+    let token = getToken();
+    if (!token) {
+        return; // No token found; user will be redirected by checkAuth()
+    }
+    
+    fetch("/get_contacts", {
+        method: "GET",
+        headers: {
+            "Authorization": "Bearer " + token
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.contacts) {
+            displayContacts(data.contacts);
+        } else {
+            alert("No contacts found.");
+        }
+    })
+    .catch(error => {
+        console.error("Error loading contacts:", error);
+        alert("An error occurred while loading contacts.");
+    });
+}
+
+// Display Contacts in the UI
+function displayContacts(contacts) {
+    let contactsList = document.getElementById("contacts");
+    contactsList.innerHTML = ""; // Clear current list
+
+    contacts.forEach(contact => {
+        // Create a new list item for each contact
+        let li = document.createElement("li");
+        li.textContent = `${contact.name} (Age: ${contact.age}) - ${contact.email}`;
+        contactsList.appendChild(li);
+    });
+}
 
 
 
