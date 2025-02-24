@@ -235,3 +235,66 @@ function editContact() {
         alert("An error occurred while editing the contact.");
     });
 }
+
+// modify the login function inside your script.js file to store the user’s role in localStorage.
+function login() {
+    let email = document.getElementById("login-email").value.trim();
+    let password = document.getElementById("login-password").value.trim();
+
+    fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.token) {
+            saveToken(data.token);  // Store JWT token
+            localStorage.setItem("role", data.role); // Store role in localStorage
+            alert(`Login successful! You are logged in as ${data.role}`);
+            window.location.href = "/";
+        } else {
+            alert(data.error);  // Show backend error message
+        }
+    })
+    .catch(error => {
+        console.error("Error during login:", error);
+        alert("An error occurred during login.");
+    });
+}
+
+//Modify the displayContacts() function to hide delete buttons for non-admins.
+function displayContacts(contacts) {
+    let contactsList = document.getElementById("contacts");
+    contactsList.innerHTML = "";
+    let role = localStorage.getItem("role");
+
+    contacts.forEach(contact => {
+        let li = document.createElement("li");
+        li.textContent = `${contact.name} (Age: ${contact.age}) - ${contact.email}`;
+
+        // Edit Button (Only Admin & Manager)
+        if (role === "admin" || role === "manager") {
+            let editBtn = document.createElement("button");
+            editBtn.textContent = "Edit";
+            editBtn.onclick = function() {
+                openEditModal(contact);
+            };
+            li.appendChild(editBtn);
+        }
+
+        // Delete Button (Only Admin)
+        if (role === "admin") {
+            let deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Delete";
+            deleteBtn.onclick = function() {
+                deleteContact(contact.id);
+            };
+            li.appendChild(deleteBtn);
+        }
+
+        contactsList.appendChild(li);
+    });
+}
+
+
