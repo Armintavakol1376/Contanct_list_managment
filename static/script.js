@@ -1,32 +1,35 @@
-// Store JWT Token
+/* =========================
+   script.js – Consolidated Version
+   ========================= */
+
+/* ----- Token & Role Functions ----- */
 function saveToken(token) {
     localStorage.setItem("jwt", token);
 }
 
-// Retrieve JWT Token
 function getToken() {
     return localStorage.getItem("jwt");
 }
 
-// Redirect If Not Logged In
+/* ----- Authentication Check & Logout ----- */
 function checkAuth() {
     if (!getToken()) {
         window.location.href = "/login"; // Redirect to login if not authenticated
     }
 }
 
-// Logout Function
 function logout() {
     localStorage.removeItem("jwt");
+    localStorage.removeItem("role");
     alert("Logged out successfully!");
-    window.location.href = "/login"; // Redirect back to login page
+    window.location.href = "/login";
 }
 
+/* ----- Login & Registration ----- */
 function login() {
     let email = document.getElementById("login-email").value.trim();
     let password = document.getElementById("login-password").value.trim();
 
-    //  Prevent empty fields
     if (!email || !password) {
         alert("Email and password are required!");
         return;
@@ -41,18 +44,27 @@ function login() {
     .then(data => {
         if (data.token) {
             saveToken(data.token);
-            alert("Login successful!");
+            localStorage.setItem("role", data.role);
+            alert(`Login successful! You are logged in as ${data.role}`);
             window.location.href = "/";
         } else {
-            alert(data.error);  // Show backend error message
+            alert(data.error);
         }
+    })
+    .catch(error => {
+        console.error("Error during login:", error);
+        alert("An error occurred during login.");
     });
 }
 
-// User Registration
 function register() {
-    let email = document.getElementById("login-email").value;
-    let password = document.getElementById("login-password").value;
+    let email = document.getElementById("login-email").value.trim();
+    let password = document.getElementById("login-password").value.trim();
+
+    if (!email || !password) {
+        alert("Email and password are required for registration!");
+        return;
+    }
 
     fetch("/register", {
         method: "POST",
@@ -60,17 +72,20 @@ function register() {
         body: JSON.stringify({ email, password })
     })
     .then(response => response.json())
-    .then(data => alert(data.message));
+    .then(data => alert(data.message || data.error))
+    .catch(error => {
+        console.error("Error during registration:", error);
+        alert("An error occurred during registration.");
+    });
 }
 
-// Get JWT token
+/* ----- Contact Management ----- */
 function addContact() {
     let name = document.getElementById("name").value.trim();
     let age = document.getElementById("age").value.trim();
     let email = document.getElementById("email").value.trim();
-    let token = getToken();  
+    let token = getToken();
 
-    // Prevent empty inputs
     if (!name || !age || !email) {
         alert("All fields are required!");
         return;
@@ -80,7 +95,7 @@ function addContact() {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` // Send token
+            "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({ name, age, email })
     })
@@ -88,29 +103,30 @@ function addContact() {
     .then(data => {
         if (data.success) {
             alert("Contact added successfully!");
-            location.reload(); // Reload to update contact list
+            loadContacts(); // Reload to update contact list
         } else {
             alert(data.error || "Failed to add contact.");
         }
     })
     .catch(error => {
-        console.error("Error:", error);
+        console.error("Error adding contact:", error);
         alert("An error occurred while adding the contact.");
     });
 }
 
-// Load Contacts from the Server
-function loadContacts() {
+/* ----- Load & Search Contacts ----- */
+function loadContacts(query = '') {
     let token = getToken();
-    if (!token) {
-        return; // No token found; user will be redirected by checkAuth()
+    if (!token) return;
+
+    let url = '/get_contacts';
+    if (query) {
+        url += '?q=' + encodeURIComponent(query);
     }
-    
-    fetch("/get_contacts", {
+
+    fetch(url, {
         method: "GET",
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+        headers: { "Authorization": "Bearer " + token }
     })
     .then(response => response.json())
     .then(data => {
@@ -126,38 +142,44 @@ function loadContacts() {
     });
 }
 
-// Display Contacts in the UI
+function searchContact() {
+    const searchTerm = document.getElementById("search").value.trim();
+    loadContacts(searchTerm);
+}
+
+/* ----- Display Contacts (Conditional Buttons) ----- */
 function displayContacts(contacts) {
     let contactsList = document.getElementById("contacts");
-    contactsList.innerHTML = ""; // Clear current list
+    contactsList.innerHTML = "";
+    let role = localStorage.getItem("role");
 
     contacts.forEach(contact => {
         let li = document.createElement("li");
         li.textContent = `${contact.name} (Age: ${contact.age}) - ${contact.email}`;
         
-        // Create Edit Button
-        let editBtn = document.createElement("button");
-        editBtn.textContent = "Edit";
-        editBtn.style.marginLeft = "10px";
-        editBtn.onclick = function() {
-            openEditModal(contact);
-        };
-
-        // Create Delete Button
-        let deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "Delete";
-        deleteBtn.style.marginLeft = "5px";
-        deleteBtn.onclick = function() {
-            deleteContact(contact.id);
-        };
-
-        li.appendChild(editBtn);
-        li.appendChild(deleteBtn);
+        // Show Edit button for admin & manager
+        if (role === "admin" || role === "manager") {
+            let editBtn = document.createElement("button");
+            editBtn.textContent = "Edit";
+            editBtn.style.marginLeft = "10px";
+            editBtn.onclick = function() { openEditModal(contact); };
+            li.appendChild(editBtn);
+        }
+        
+        // Show Delete button only for admin
+        if (role === "admin") {
+            let deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Delete";
+            deleteBtn.style.marginLeft = "5px";
+            deleteBtn.onclick = function() { deleteContact(contact.id); };
+            li.appendChild(deleteBtn);
+        }
+        
         contactsList.appendChild(li);
     });
 }
 
-// DELETE Contact
+/* ----- Edit & Delete Contacts ----- */
 function deleteContact(contactId) {
     let token = getToken();
     if (!token) {
@@ -167,14 +189,12 @@ function deleteContact(contactId) {
 
     fetch(`/delete_contact/${contactId}`, {
         method: "DELETE",
-        headers: {
-            "Authorization": "Bearer " + token
-        }
+        headers: { "Authorization": "Bearer " + token }
     })
     .then(response => response.json())
     .then(data => {
         alert(data.message || data.error);
-        loadContacts();  // Refresh contact list after deletion
+        loadContacts();
     })
     .catch(error => {
         console.error("Error deleting contact:", error);
@@ -182,22 +202,18 @@ function deleteContact(contactId) {
     });
 }
 
-// Open Edit Modal
 function openEditModal(contact) {
     document.getElementById("edit-contact-id").value = contact.id;
     document.getElementById("edit-name").value = contact.name;
     document.getElementById("edit-age").value = contact.age;
     document.getElementById("edit-email").value = contact.email;
-    
     document.getElementById("editModal").style.display = "block";
 }
 
-// Close Modal
 function closeEditModal() {
     document.getElementById("editModal").style.display = "none";
 }
 
-// Update Contact
 function editContact() {
     let token = getToken();
     if (!token) {
@@ -210,7 +226,6 @@ function editContact() {
     let newAge = document.getElementById("edit-age").value.trim();
     let newEmail = document.getElementById("edit-email").value.trim();
 
-    // Basic validation
     if (!newName || !newAge || !newEmail) {
         alert("All fields are required!");
         return;
@@ -228,73 +243,10 @@ function editContact() {
     .then(data => {
         alert(data.message || data.error);
         closeEditModal();
-        loadContacts();  // Refresh the contact list after editing
+        loadContacts();
     })
     .catch(error => {
         console.error("Error editing contact:", error);
         alert("An error occurred while editing the contact.");
     });
 }
-
-// modify the login function inside your script.js file to store the user’s role in localStorage.
-function login() {
-    let email = document.getElementById("login-email").value.trim();
-    let password = document.getElementById("login-password").value.trim();
-
-    fetch("/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.token) {
-            saveToken(data.token);  // Store JWT token
-            localStorage.setItem("role", data.role); // Store role in localStorage
-            alert(`Login successful! You are logged in as ${data.role}`);
-            window.location.href = "/";
-        } else {
-            alert(data.error);  // Show backend error message
-        }
-    })
-    .catch(error => {
-        console.error("Error during login:", error);
-        alert("An error occurred during login.");
-    });
-}
-
-//Modify the displayContacts() function to hide delete buttons for non-admins.
-function displayContacts(contacts) {
-    let contactsList = document.getElementById("contacts");
-    contactsList.innerHTML = "";
-    let role = localStorage.getItem("role");
-
-    contacts.forEach(contact => {
-        let li = document.createElement("li");
-        li.textContent = `${contact.name} (Age: ${contact.age}) - ${contact.email}`;
-
-        // Edit Button (Only Admin & Manager)
-        if (role === "admin" || role === "manager") {
-            let editBtn = document.createElement("button");
-            editBtn.textContent = "Edit";
-            editBtn.onclick = function() {
-                openEditModal(contact);
-            };
-            li.appendChild(editBtn);
-        }
-
-        // Delete Button (Only Admin)
-        if (role === "admin") {
-            let deleteBtn = document.createElement("button");
-            deleteBtn.textContent = "Delete";
-            deleteBtn.onclick = function() {
-                deleteContact(contact.id);
-            };
-            li.appendChild(deleteBtn);
-        }
-
-        contactsList.appendChild(li);
-    });
-}
-
-

@@ -119,9 +119,22 @@ def add_contact():
 @jwt_required()
 def get_contacts():
     current_user_email = get_jwt_identity()
-    contacts = Contact.query.filter_by(added_by=current_user_email).all()
+    # Get the search query from the URL, default to empty string if not provided
+    search_query = request.args.get("q", "").strip()
+    
+    # Start with contacts for the current user
+    contacts_query = Contact.query.filter_by(added_by=current_user_email)
+    
+    # If a search query is provided, filter by name or email
+    if search_query:
+        contacts_query = contacts_query.filter(
+            (Contact.name.like(f"%{search_query}%")) | (Contact.email.like(f"%{search_query}%"))
+        )
+    
+    contacts = contacts_query.all()
     result = [{"id": c.id, "name": c.name, "age": c.age, "email": c.email, "added_by": c.added_by} for c in contacts]
     return jsonify({"contacts": result}), 200
+
 
 # 🔹 Delete Contact (Only Admin)
 @app.route("/delete_contact/<int:id>", methods=["DELETE"])

@@ -22,11 +22,24 @@ h1 {
     text-align: center;
 }
 
+/* 🔎 Search Box */
+.search {
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.search input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #008000;
+    border-radius: 5px;
+}
+
 /* 📥 Input Fields */
 input {
     padding: 10px;
     margin: 5px 0;
-    width: 30%;
+    width: 100%;
     border: 1px solid #008000;
     border-radius: 5px;
 }
@@ -35,11 +48,12 @@ input {
 button {
     background-color: #008000;
     color: white;
-    padding: 10px;
+    padding: 10px 15px;
     border: none;
     cursor: pointer;
     border-radius: 5px;
     font-weight: bold;
+    display: inline-block;
 }
 
 button:hover {
@@ -56,13 +70,17 @@ button:hover {
 .contact-list td, .contact-list th {
     padding: 10px;
     border-bottom: 1px solid #008000;
+    text-align: left;
 }
 
 /* 🗑 Delete Button */
 .delete-btn {
     background-color: red;
+    color: white;
     padding: 5px 10px;
+    border: none;
     border-radius: 5px;
+    cursor: pointer;
 }
 
 .delete-btn:hover {
