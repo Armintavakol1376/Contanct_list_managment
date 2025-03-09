@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 🌿 Your Previous CSS Styles */
+/* These styles will apply when Tailwind doesn't override them */
+
+/* 🌿 General Page Styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0fff0; /* Light greenish white */
+    margin: 0;
+    padding: 20px;
+}
+
+/* 🟢 Container Styling */
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 128, 0, 0.2); /* Green shadow */
+}
+
+/* 🏷️ Header */
+h1 {
+    color: #008000; /* Dark green */
+    text-align: center;
+}
+
+/* 🔎 Search Box */
+.search {
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.search input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #008000;
+    border-radius: 5px;
+}
+
+/* 📥 Input Fields */
+input {
+    padding: 10px;
+    margin: 5px 0;
+    width: 100%;
+    border: 1px solid #008000;
+    border-radius: 5px;
+}
+
+/* ➕ Add Contact Button */
+button {
+    background-color: #008000;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+button:hover {
+    background-color: #006400; /* Darker green */
+}
+
+/* 📋 Contact List */
+.contact-list {
+    width: 100%;
+    margin-top: 10px;
+    border-collapse: collapse;
+}
+
+.contact-list td, .contact-list th {
+    padding: 10px;
+    border-bottom: 1px solid #008000;
+    text-align: left;
+}
+
+/* 🗑 Delete Button */
+.delete-btn {
+    background-color: red;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    background-color: darkred;
+}

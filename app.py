@@ -6,6 +6,9 @@ from flask_jwt_extended import (
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from functools import wraps
+import pymysql
+pymysql.install_as_MySQLdb()
+
 
 app = Flask(__name__)
 
