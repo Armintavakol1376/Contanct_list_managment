@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "Flask project with Tailwind CSS",
   "scripts": {
-    "build": "postcss static/src/main.css -o static/styles.css",
-    "watch": "postcss static/src/main.css -o static/styles.css --watch"
-  },
+  "build:css": "tailwindcss -i ./static/src/main.css -o ./static/dist/output.css --watch",
+  "build": "postcss static/src/main.css -o static/styles.css",
+  "watch": "postcss static/src/main.css -o static/styles.css --watch"
+},
+  
   "devDependencies": {
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.3",

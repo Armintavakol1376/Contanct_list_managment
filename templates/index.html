@@ -5,43 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact Management</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="{{ url_for('static', filename='src/main.css') }}" rel="stylesheet">
+
 </head>
 <body onload="checkAuth(); loadContacts();">  <!-- Check if user is logged in and load contacts -->
 
-    <div class="container">
-        <h1>Contact Management System</h1>
-        <button onclick="logout()">Logout</button>
-
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl md:text-4xl font-bold mb-4">Contact Management System</h1>
+        <button class="bg-blue-500 text-white px-4 py-2 rounded" onclick="logout()">Logout</button>
+    
         <!-- Contact Form -->
-        <div class="form">
-            <input type="text" id="name" placeholder="Enter Name">
-            <input type="number" id="age" placeholder="Enter Age">
-            <input type="email" id="email" placeholder="Enter Email">
-            <button onclick="addContact()">Add Contact</button>
+        <div class="form space-y-4 mt-4">
+            <input type="text" id="name" placeholder="Enter Name" class="border rounded p-2 w-full">
+            <input type="number" id="age" placeholder="Enter Age" class="border rounded p-2 w-full">
+            <input type="email" id="email" placeholder="Enter Email" class="border rounded p-2 w-full">
+            <button class="bg-green-500 text-white px-4 py-2 rounded" onclick="addContact()">Add Contact</button>
         </div>
-
+    
         <!-- Search Bar -->
-        <div class="search">
-            <input type="text" id="search" placeholder="Search by Name" onkeyup="searchContact()">
+        <div class="search mt-4">
+            <input type="text" id="search" placeholder="Search by Name" onkeyup="searchContact()" class="border rounded p-2 w-full">
         </div>
-
+    
         <!-- Contact List -->
-        <div id="contact-list">
-            <h2>Contact List</h2>
-            <ul id="contacts"></ul>
+        <div id="contact-list" class="mt-8">
+            <h2 class="text-xl md:text-2xl font-semibold">Contact List</h2>
+            <ul id="contacts" class="space-y-4"></ul>
         </div>
     </div>
-
+    
     <!-- Edit Contact Modal -->
-    <div id="editModal" style="display:none; position:fixed; top:20%; left:50%; transform:translate(-50%, -20%); padding:20px; background:white; border:1px solid black;">
-        <h3>Edit Contact</h3>
+    <div id="editModal" class="fixed top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 p-6 bg-white border rounded shadow-lg hidden">
+        <h3 class="text-lg font-bold mb-4">Edit Contact</h3>
         <input type="hidden" id="edit-contact-id">
-        <input type="text" id="edit-name" placeholder="Name"><br>
-        <input type="number" id="edit-age" placeholder="Age"><br>
-        <input type="email" id="edit-email" placeholder="Email"><br>
-        <button onclick="editContact()">Save</button>
-        <button onclick="closeEditModal()">Cancel</button>
+        <input type="text" id="edit-name" placeholder="Name" class="border rounded p-2 w-full mb-2">
+        <input type="number" id="edit-age" placeholder="Age" class="border rounded p-2 w-full mb-2">
+        <input type="email" id="edit-email" placeholder="Email" class="border rounded p-2 w-full mb-4">
+        <button class="bg-green-500 text-white px-4 py-2 rounded" onclick="editContact()">Save</button>
+        <button class="bg-red-500 text-white px-4 py-2 rounded ml-2" onclick="closeEditModal()">Cancel</button>
     </div>
+    
 
     <script>
         function renderContacts(contacts) {
